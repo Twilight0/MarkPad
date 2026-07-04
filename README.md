@@ -1,18 +1,18 @@
-# ViewMD
+# MarkPad
 
-A lightweight GTK 3 markdown viewer for desktop Linux. It is ideal as your default app for opening `.md` files. Uses the excellent library [md4c](https://github.com/mity/md4c) for markdown parsing. This project is sort of a companion app/fork of my other markdown project [TrayMD](https://github.com/rabfulton/TrayMD). 
+A lightweight GTK 3 markdown editor/viewer for desktop Linux. Uses the excellent library [md4c](https://github.com/mity/md4c) for markdown parsing. This project is a fork of [ViewMD](https://github.com/rabfulton/ViewMD) by rabfulton.
 
-![ViewMD](assets/screenshot.png)
+![MarkPad](assets/screenshot.png)
 
 ## Features
 
 - **Native GTK viewer** - No webviews
-- **Read-only rendering** - Focused on viewing markdown files
-- **Minimal UI** - Clean toolbar with open and settings buttons
+- **Edit mode** - Toggle between rendered view and raw markdown editing
+- **Minimal UI** - Clean toolbar with open, save, and settings buttons
 - **Lightweight** - Pure C, no web technologies, fast startup
 - **Hyperlink support** - Left click opens links and internal anchors
 - **Document search** - `Ctrl+F` with next/previous match navigation
-- **Local image support** - Local images are resized to fit the the document window
+- **Local image support** - Local images are resized to fit the document window
 
 ## Supported Markdown
 
@@ -38,14 +38,14 @@ Code blocks currently support a beta version of keyword highlighting for fenced 
 
 ### Arch Linux (AUR)
 
-https://aur.archlinux.org/packages/viewmd
+https://aur.archlinux.org/packages/markpad
 
 ### Debian/Ubuntu (.deb)
 
 Install a built `.deb` package with:
 
 ```bash
-sudo apt install ./viewmd_*.deb
+sudo apt install ./markpad_*.deb
 ```
 
 ### Fedora/RHEL (.rpm)
@@ -53,16 +53,18 @@ sudo apt install ./viewmd_*.deb
 Install a built `.rpm` package with:
 
 ```bash
-sudo dnf install ./viewmd-*.rpm
+sudo dnf install ./markpad-*.rpm
 ```
 
 ## Usage
 
-Run `viewmd` to start the application.
+Run `markpad` to start the application.
 
 - **Open button**: Open a markdown document
+- **Save button**: Save the current document (enabled when changes are made in edit mode)
 - **Reload button**: Reload the currently open document from disk
 - **Settings button**: Adjust theme, fonts, and markdown accent colors
+- **Edit button**: Toggle between rendered view and raw markdown editing
 
 ### Find in Document
 
@@ -73,11 +75,11 @@ Run `viewmd` to start the application.
 
 ### Set as Default `.md` Viewer
 
-After installing, associate markdown MIME types with `viewmd.desktop`:
+After installing, associate markdown MIME types with `markpad.desktop`:
 
 ```bash
-xdg-mime default viewmd.desktop text/markdown
-xdg-mime default viewmd.desktop text/x-markdown
+xdg-mime default markpad.desktop text/markdown
+xdg-mime default markpad.desktop text/x-markdown
 ```
 
 Verify the current default:
@@ -101,8 +103,8 @@ sudo make install
 ```
 
 This installs:
-- Binary to `/usr/local/bin/viewmd`
-- Desktop file to `/usr/local/share/applications/viewmd.desktop`
+- Binary to `/usr/local/bin/markpad`
+- Desktop file to `/usr/local/share/applications/markpad.desktop`
 
 ### Uninstallation
 
@@ -130,10 +132,15 @@ sudo dnf install gtk3-devel
 
 - Arch: `packaging/arch/PKGBUILD`
 - Debian: `packaging/deb/control.in`
-- RPM: `packaging/rpm/viewmd.spec.in`
+- RPM: `packaging/rpm/markpad.spec.in`
 ## License
 
 MIT License
+
+## Credits
+
+- Original project: [ViewMD](https://github.com/rabfulton/ViewMD) by rabfulton
+- Markdown parsing: [md4c](https://github.com/mity/md4c)
 
 ## Other Useful Projects
 - TrayMD is an app for taking notes in markdown with live editing [TrayMD](https://github.com/rabfulton/TrayMD)

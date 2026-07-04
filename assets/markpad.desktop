@@ -1,10 +1,10 @@
 [Desktop Entry]
-Name=ViewMD
-Comment=Lightweight markdown viewer
-Exec=viewmd %F
+Name=MarkPad
+Comment=Lightweight markdown editor/viewer
+Exec=markpad %F
 Icon=accessories-text-editor
 Terminal=false
 Type=Application
 Categories=Utility;TextEditor;
-Keywords=markdown;viewer;
+Keywords=markdown;viewer;editor;
 MimeType=text/markdown;text/x-markdown;

@@ -1,9 +1,9 @@
-pkgname=viewmd
+pkgname=markpad
 pkgver=0.r0.g0000000
 pkgrel=1
-pkgdesc="Lightweight GTK3 markdown viewer"
+pkgdesc="Lightweight GTK3 markdown editor/viewer"
 arch=('x86_64')
-url="https://github.com/rabfulton/ViewMD"
+url="https://github.com/Twilight0/MarkPad"
 license=('MIT')
 depends=('gtk3')
 makedepends=('git' 'gcc' 'make' 'pkgconf')

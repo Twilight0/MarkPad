@@ -4,7 +4,7 @@
 #include <gtk/gtk.h>
 
 /* GObject data key used to mark hrule child anchors inserted into the buffer. */
-#define TRAYMD_HRULE_ANCHOR_DATA "viewmd-hr-anchor"
+#define MARKPAD_HRULE_ANCHOR_DATA "markpad-hr-anchor"
 
 /* Initialize markdown tags on a text buffer */
 void markdown_init_tags(GtkTextBuffer *buffer);
@@ -13,42 +13,42 @@ void markdown_init_tags(GtkTextBuffer *buffer);
 void markdown_update_accent_tags(GtkTextBuffer *buffer);
 
 /* Data key set on per-link metadata tags to store resolved URL/href. */
-#define VIEWMD_LINK_URL_DATA "viewmd-link-url"
+#define MARKPAD_LINK_URL_DATA "markpad-link-url"
 
 /* Prefix for named text marks used as internal heading anchors. */
-#define VIEWMD_ANCHOR_MARK_PREFIX "viewmd-anchor-"
+#define MARKPAD_ANCHOR_MARK_PREFIX "markpad-anchor-"
 
 /* GObject data key used to mark table child anchors with parsed table data. */
-#define VIEWMD_TABLE_ANCHOR_DATA "viewmd-table-anchor"
+#define MARKPAD_TABLE_ANCHOR_DATA "markpad-table-anchor"
 /* GObject data key set on table anchors for hidden searchable index metadata. */
-#define VIEWMD_TABLE_SEARCH_INDEX_DATA "viewmd-table-search-index"
+#define MARKPAD_TABLE_SEARCH_INDEX_DATA "markpad-table-search-index"
 /* GObject data key set on table anchors for attached table widget instance. */
-#define VIEWMD_TABLE_WIDGET_DATA "viewmd-table-widget"
+#define MARKPAD_TABLE_WIDGET_DATA "markpad-table-widget"
 /* GObject data keys set on each table cell widget. */
-#define VIEWMD_TABLE_CELL_ROW_DATA "viewmd-table-cell-row"
-#define VIEWMD_TABLE_CELL_COL_DATA "viewmd-table-cell-col"
+#define MARKPAD_TABLE_CELL_ROW_DATA "markpad-table-cell-row"
+#define MARKPAD_TABLE_CELL_COL_DATA "markpad-table-cell-col"
 /* CSS classes for table search highlight states. */
-#define VIEWMD_TABLE_CELL_MATCH_CLASS "viewmd-table-cell-match"
-#define VIEWMD_TABLE_CELL_CURRENT_CLASS "viewmd-table-cell-current"
+#define MARKPAD_TABLE_CELL_MATCH_CLASS "markpad-table-cell-match"
+#define MARKPAD_TABLE_CELL_CURRENT_CLASS "markpad-table-cell-current"
 
 /* GObject data keys for image anchors and metadata. */
-#define VIEWMD_IMAGE_ANCHOR_DATA "viewmd-image-anchor"
-#define VIEWMD_IMAGE_SRC_DATA "viewmd-image-src"
-#define VIEWMD_IMAGE_ALT_DATA "viewmd-image-alt"
-#define VIEWMD_IMAGE_WIDGET_DATA "viewmd-image-widget"
+#define MARKPAD_IMAGE_ANCHOR_DATA "markpad-image-anchor"
+#define MARKPAD_IMAGE_SRC_DATA "markpad-image-src"
+#define MARKPAD_IMAGE_ALT_DATA "markpad-image-alt"
+#define MARKPAD_IMAGE_WIDGET_DATA "markpad-image-widget"
 
 typedef struct {
   gint row;
   gint col;
   gint start_offset;
   gint end_offset;
-} ViewmdTableSearchCellRange;
+} MarkpadTableSearchCellRange;
 
 typedef struct {
   gint start_offset;
   gint end_offset;
-  GArray *cells; /* ViewmdTableSearchCellRange */
-} ViewmdTableSearchIndex;
+  GArray *cells; /* MarkpadTableSearchCellRange */
+} MarkpadTableSearchIndex;
 
 /* Normalize heading/link text into anchor slug form. Caller owns result. */
 gchar *markdown_normalize_anchor_slug(const gchar *text);
