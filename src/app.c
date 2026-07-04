@@ -9,7 +9,6 @@ MarkydApp *app = NULL;
 static void on_activate(GtkApplication *gtk_app, gpointer user_data);
 static void on_open(GtkApplication *gtk_app, GFile **files, gint n_files,
                     const gchar *hint, gpointer user_data);
-static void markyd_app_update_window_title(MarkydApp *self);
 static void markyd_app_ensure_window(MarkydApp *self);
 
 MarkydApp *markyd_app_new(void) {
@@ -60,7 +59,7 @@ int markyd_app_run(MarkydApp *self, int argc, char **argv) {
   return g_application_run(G_APPLICATION(self->gtk_app), argc, argv);
 }
 
-static void markyd_app_update_window_title(MarkydApp *self) {
+void markyd_app_update_window_title(MarkydApp *self) {
   gchar *title;
 
   if (!self || !self->window || !self->window->window) {

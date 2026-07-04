@@ -12,6 +12,8 @@ typedef struct _MarkydWindow {
   GtkWidget *btn_open;
   GtkWidget *btn_refresh;
   GtkWidget *btn_settings;
+  GtkWidget *btn_edit;
+  GtkWidget *btn_save;
   GtkWidget *search_revealer;
   GtkWidget *search_entry;
   GtkWidget *btn_search_prev;
@@ -23,6 +25,8 @@ typedef struct _MarkydWindow {
   MarkydApp *app;
   GArray *search_matches;
   gint search_current_index;
+  gboolean edit_mode;
+  gboolean has_unsaved_changes;
 } MarkydWindow;
 
 /* Lifecycle */

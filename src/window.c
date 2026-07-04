@@ -18,7 +18,11 @@ typedef struct {
 static void on_open_clicked(GtkButton *button, gpointer user_data);
 static void on_refresh_clicked(GtkButton *button, gpointer user_data);
 static void on_settings_clicked(GtkButton *button, gpointer user_data);
+static void on_edit_clicked(GtkButton *button, gpointer user_data);
+static void on_save_clicked(GtkButton *button, gpointer user_data);
 static void on_search_changed(GtkEditable *editable, gpointer user_data);
+static void enter_edit_mode(MarkydWindow *self);
+static void leave_edit_mode(MarkydWindow *self);
 static void on_search_prev_clicked(GtkButton *button, gpointer user_data);
 static void on_search_next_clicked(GtkButton *button, gpointer user_data);
 static gboolean on_search_entry_key_press(GtkWidget *widget, GdkEventKey *event,
@@ -686,10 +690,23 @@ MarkydWindow *markyd_window_new(MarkydApp *app) {
   g_signal_connect(self->btn_settings, "clicked", G_CALLBACK(on_settings_clicked),
                    self);
 
+  self->btn_edit =
+      gtk_button_new_from_icon_name("document-edit-symbolic", GTK_ICON_SIZE_BUTTON);
+  gtk_widget_set_tooltip_text(self->btn_edit, "Edit Document");
+  g_signal_connect(self->btn_edit, "clicked", G_CALLBACK(on_edit_clicked), self);
+
+  self->btn_save =
+      gtk_button_new_from_icon_name("document-save-symbolic", GTK_ICON_SIZE_BUTTON);
+  gtk_widget_set_tooltip_text(self->btn_save, "Save Document");
+  gtk_widget_set_sensitive(self->btn_save, FALSE);
+  g_signal_connect(self->btn_save, "clicked", G_CALLBACK(on_save_clicked), self);
+
   left_buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
   gtk_box_pack_start(GTK_BOX(left_buttons), self->btn_open, FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(left_buttons), self->btn_save, FALSE, FALSE, 0);
   gtk_box_pack_start(GTK_BOX(left_buttons), self->btn_refresh, FALSE, FALSE, 0);
   gtk_box_pack_start(GTK_BOX(left_buttons), self->btn_settings, FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(left_buttons), self->btn_edit, FALSE, FALSE, 0);
   gtk_header_bar_pack_start(GTK_HEADER_BAR(self->header_bar), left_buttons);
 
   main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -747,6 +764,8 @@ MarkydWindow *markyd_window_new(MarkydApp *app) {
                     markyd_editor_get_widget(self->editor));
   self->search_matches = g_array_new(FALSE, FALSE, sizeof(SearchMatch));
   self->search_current_index = -1;
+  self->edit_mode = FALSE;
+  self->has_unsaved_changes = FALSE;
   g_signal_connect(self->editor->buffer, "changed",
                    G_CALLBACK(on_editor_buffer_changed), self);
   ensure_search_tags(self);
@@ -926,6 +945,25 @@ static void on_open_clicked(GtkButton *button, gpointer user_data) {
 
   (void)button;
 
+  if (self->edit_mode && self->has_unsaved_changes) {
+    GtkWidget *confirm = gtk_message_dialog_new(
+        GTK_WINDOW(self->window),
+        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_QUESTION,
+        GTK_BUTTONS_YES_NO, "Discard unsaved changes?");
+    gtk_message_dialog_format_secondary_text(
+        GTK_MESSAGE_DIALOG(confirm),
+        "You have unsaved changes. Do you want to discard them?");
+    gint confirm_response = gtk_dialog_run(GTK_DIALOG(confirm));
+    gtk_widget_destroy(confirm);
+    if (confirm_response != GTK_RESPONSE_YES) {
+      return;
+    }
+  }
+
+  if (self->edit_mode) {
+    leave_edit_mode(self);
+  }
+
   dialog = gtk_file_chooser_dialog_new(
       "Open Markdown Document", GTK_WINDOW(self->window),
       GTK_FILE_CHOOSER_ACTION_OPEN, "_Cancel", GTK_RESPONSE_CANCEL, "_Open",
@@ -1007,6 +1045,188 @@ static void on_settings_clicked(GtkButton *button, gpointer user_data) {
   }
 
   gtk_widget_destroy(dialog);
+}
+
+static void on_edit_buffer_changed(GtkTextBuffer *buffer, gpointer user_data) {
+  MarkydWindow *self = (MarkydWindow *)user_data;
+  (void)buffer;
+
+  if (!self || !self->edit_mode) {
+    return;
+  }
+
+  self->has_unsaved_changes = TRUE;
+  gtk_widget_set_sensitive(self->btn_save, TRUE);
+}
+
+static void enter_edit_mode(MarkydWindow *self) {
+  gchar *raw_content;
+
+  if (!self || !self->editor || self->edit_mode) {
+    return;
+  }
+
+  raw_content = markyd_editor_get_content(self->editor);
+
+  self->edit_mode = TRUE;
+  self->has_unsaved_changes = FALSE;
+
+  g_signal_handlers_disconnect_by_func(self->editor->buffer,
+                                       G_CALLBACK(on_editor_buffer_changed), self);
+
+  gtk_text_view_set_editable(GTK_TEXT_VIEW(self->editor->text_view), TRUE);
+  gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(self->editor->text_view), TRUE);
+
+  {
+    GtkTextIter start;
+    GtkTextIter end;
+    gtk_text_buffer_get_bounds(self->editor->buffer, &start, &end);
+    gtk_text_buffer_delete(self->editor->buffer, &start, &end);
+  }
+
+  {
+    GtkTextIter start;
+    gtk_text_buffer_get_start_iter(self->editor->buffer, &start);
+    gtk_text_buffer_insert(self->editor->buffer, &start, raw_content, -1);
+  }
+
+  g_signal_connect(self->editor->buffer, "changed",
+                   G_CALLBACK(on_edit_buffer_changed), self);
+
+  gtk_widget_set_tooltip_text(self->btn_edit, "Preview Document");
+  gtk_widget_set_sensitive(self->btn_save, FALSE);
+  gtk_widget_set_sensitive(self->btn_refresh, FALSE);
+
+  g_free(raw_content);
+}
+
+static void leave_edit_mode(MarkydWindow *self) {
+  gchar *raw_content;
+
+  if (!self || !self->editor || !self->edit_mode) {
+    return;
+  }
+
+  raw_content = markyd_editor_get_content(self->editor);
+
+  self->edit_mode = FALSE;
+  self->has_unsaved_changes = FALSE;
+
+  g_signal_handlers_disconnect_by_func(self->editor->buffer,
+                                       G_CALLBACK(on_edit_buffer_changed), self);
+
+  gtk_text_view_set_editable(GTK_TEXT_VIEW(self->editor->text_view), FALSE);
+  gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(self->editor->text_view), FALSE);
+
+  markyd_editor_set_content(self->editor, raw_content);
+
+  g_signal_connect(self->editor->buffer, "changed",
+                   G_CALLBACK(on_editor_buffer_changed), self);
+
+  gtk_widget_set_tooltip_text(self->btn_edit, "Edit Document");
+  gtk_widget_set_sensitive(self->btn_save, FALSE);
+  gtk_widget_set_sensitive(self->btn_refresh, TRUE);
+
+  g_free(raw_content);
+}
+
+static void on_edit_clicked(GtkButton *button, gpointer user_data) {
+  MarkydWindow *self = (MarkydWindow *)user_data;
+
+  (void)button;
+
+  if (!self) {
+    return;
+  }
+
+  if (self->edit_mode) {
+    leave_edit_mode(self);
+  } else {
+    enter_edit_mode(self);
+  }
+}
+
+static void on_save_clicked(GtkButton *button, gpointer user_data) {
+  MarkydWindow *self = (MarkydWindow *)user_data;
+  const gchar *current_path;
+  gchar *content;
+  GError *error = NULL;
+
+  (void)button;
+
+  if (!self || !self->edit_mode) {
+    return;
+  }
+
+  current_path = markyd_app_get_current_path(self->app);
+  if (!current_path || current_path[0] == '\0') {
+    GtkWidget *dialog;
+    gint response;
+
+    dialog = gtk_file_chooser_dialog_new(
+        "Save Markdown Document", GTK_WINDOW(self->window),
+        GTK_FILE_CHOOSER_ACTION_SAVE, "_Cancel", GTK_RESPONSE_CANCEL, "_Save",
+        GTK_RESPONSE_ACCEPT, NULL);
+
+    gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(dialog), TRUE);
+
+    {
+      GtkFileFilter *md_filter = gtk_file_filter_new();
+      gtk_file_filter_set_name(md_filter, "Markdown files (*.md)");
+      gtk_file_filter_add_pattern(md_filter, "*.md");
+      gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), md_filter);
+    }
+
+    response = gtk_dialog_run(GTK_DIALOG(dialog));
+    if (response == GTK_RESPONSE_ACCEPT) {
+      gchar *path = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+      if (path) {
+        content = markyd_editor_get_content(self->editor);
+        if (g_file_set_contents(path, content, -1, &error)) {
+          g_free(self->app->current_file_path);
+          self->app->current_file_path = g_strdup(path);
+          self->has_unsaved_changes = FALSE;
+          gtk_widget_set_sensitive(self->btn_save, FALSE);
+          markyd_app_update_window_title(self->app);
+        } else {
+          GtkWidget *error_dialog = gtk_message_dialog_new(
+              GTK_WINDOW(self->window),
+              GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR,
+              GTK_BUTTONS_CLOSE, "Failed to save document");
+          if (error) {
+            gtk_message_dialog_format_secondary_text(
+                GTK_MESSAGE_DIALOG(error_dialog), "%s", error->message);
+            g_error_free(error);
+          }
+          gtk_dialog_run(GTK_DIALOG(error_dialog));
+          gtk_widget_destroy(error_dialog);
+        }
+        g_free(content);
+        g_free(path);
+      }
+    }
+
+    gtk_widget_destroy(dialog);
+  } else {
+    content = markyd_editor_get_content(self->editor);
+    if (g_file_set_contents(current_path, content, -1, &error)) {
+      self->has_unsaved_changes = FALSE;
+      gtk_widget_set_sensitive(self->btn_save, FALSE);
+    } else {
+      GtkWidget *error_dialog = gtk_message_dialog_new(
+          GTK_WINDOW(self->window),
+          GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR,
+          GTK_BUTTONS_CLOSE, "Failed to save document");
+      if (error) {
+        gtk_message_dialog_format_secondary_text(GTK_MESSAGE_DIALOG(error_dialog),
+                                                 "%s", error->message);
+        g_error_free(error);
+      }
+      gtk_dialog_run(GTK_DIALOG(error_dialog));
+      gtk_widget_destroy(error_dialog);
+    }
+    g_free(content);
+  }
 }
 
 static gboolean on_key_press_event(GtkWidget *widget, GdkEventKey *event,
